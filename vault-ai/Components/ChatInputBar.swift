@@ -14,6 +14,10 @@ final class ChatInputBar: UIView {
     private let textField = InsetTextField()
     private let sendButton = UIButton()
 
+    private let onTextDidChangeSubject = PassthroughSubject<String, Never>()
+    public var onTextDidChangePublisher: AnyPublisher<String, Never> { onTextDidChangeSubject.eraseToAnyPublisher()
+    }
+
     // MARK: Init
 
     init() {
@@ -74,7 +78,14 @@ final class ChatInputBar: UIView {
         }
     }
 
-    private func setupBindings() {}
+    private func setupBindings() {
+        textField.addTarget(self, action: #selector(textDidChange), for: .editingChanged)
+    }
+
+    @objc func textDidChange() {
+        let text = textField.text ?? ""
+        onTextDidChangeSubject.send(text)
+    }
 
     public func focus() {
         textField.becomeFirstResponder()
@@ -83,6 +94,14 @@ final class ChatInputBar: UIView {
     public func blur() {
         textField.resignFirstResponder()
         textField.endEditing(true)
+    }
+
+    public func setText(_ text: String) {
+        textField.text = text
+    }
+
+    public func clear() {
+        textField.text = ""
     }
 }
 
