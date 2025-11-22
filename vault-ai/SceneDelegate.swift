@@ -14,7 +14,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let scene = (scene as? UIWindowScene) else { return }
         let window = UIWindow(windowScene: scene)
         self.window = window
-        let rootVC = UINavigationController(rootViewController: ViewController())
+        let vc = AppSharedPoint.shared.setRoute(.main) ?? UIViewController()
+        let rootVC = UINavigationController(rootViewController: vc)
         window.rootViewController = rootVC
         window.makeKeyAndVisible()
     }
