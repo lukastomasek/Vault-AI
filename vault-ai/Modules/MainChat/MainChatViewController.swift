@@ -17,6 +17,21 @@ class MainChatViewController: UIViewController {
     override var inputAccessoryView: UIView? { chatInputBar }
     override var canBecomeFirstResponder: Bool { true }
 
+    private let testOutgoingMessageView = ConversationBubbleView(
+        config: .init(
+            backgroundColor: DesignSystem.Colors.primaryBlue, textColor: .white
+        )
+    )
+
+    private let testIncomingMessageView = ConversationBubbleView(
+        config: .init(
+            backgroundColor: DesignSystem.Colors.backgroundDefault, textColor: .black
+        )
+    )
+
+    private let scrollView = UIScrollView()
+    private let mainStackView = UIStackView()
+
     // MARK: - Initialization
 
     init(viewModel: MainChatViewModelProtocol) {
@@ -37,6 +52,32 @@ class MainChatViewController: UIViewController {
 
     private func setupView() {
         view.backgroundColor = .white
+
+        scrollView.showsVerticalScrollIndicator = true
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.alwaysBounceVertical = true
+        scrollView.alwaysBounceHorizontal = false
+
+        mainStackView.axis = .vertical
+        mainStackView.spacing = DesignSystem.Spacing.m
+        mainStackView.alignment = .fill
+        mainStackView.distribution = .fillProportionally
+        mainStackView.isLayoutMarginsRelativeArrangement = true
+        mainStackView.layoutMargins = .init(
+            top: .zero,
+            left: DesignSystem.Spacing.m,
+            bottom: DesignSystem.Spacing.m,
+            right: DesignSystem.Spacing.m
+        )
+
+        testIncomingMessageView.bind(with: viewModel.output.mockIncomingMessage())
+        testOutgoingMessageView.bind(with: viewModel.output.mockOutgoingMessage())
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(mainStackView)
+
+        mainStackView.addArrangedSubview(testOutgoingMessageView)
+        mainStackView.addArrangedSubview(testIncomingMessageView)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -46,5 +87,15 @@ class MainChatViewController: UIViewController {
         chatInputBar.focus()
     }
 
-    private func setupConstraints() {}
+    private func setupConstraints() {
+        scrollView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.width.equalTo(view.snp.width)
+        }
+
+        mainStackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.width.equalTo(view.snp.width)
+        }
+    }
 }

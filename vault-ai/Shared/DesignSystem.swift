@@ -145,6 +145,6 @@ final class DesignSystem {
     enum Colors {
         static let primaryBlue = UIColor(red: 0.0, green: 0.47, blue: 1.0, alpha: 1.0) // Example color
         static let textPrimary = UIColor.black
-        static let backgroundDefault = UIColor.white
+        static let backgroundDefault = UIColor(hex: "#F8F8F8") ?? .lightGray
     }
 }
