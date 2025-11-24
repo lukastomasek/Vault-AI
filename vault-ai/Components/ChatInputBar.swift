@@ -18,6 +18,12 @@ final class ChatInputBar: UIView {
     public var onTextDidChangePublisher: AnyPublisher<String, Never> { onTextDidChangeSubject.eraseToAnyPublisher()
     }
 
+    private var isInputFocused: Bool = false {
+        didSet {
+            applyState()
+        }
+    }
+
     // MARK: Init
 
     init() {
@@ -37,15 +43,15 @@ final class ChatInputBar: UIView {
         backgroundColor = .white
 
         topSeparator.backgroundColor = .lightGray
-        textField.font = .systemFont(ofSize: 16.0)
+        textField.font = DesignSystem.InputFields.font
         textField.textAlignment = .left
         textField.placeholder = "Ask me anything!"
-        textField.layer.cornerRadius = 8.0
+        textField.layer.cornerRadius = DesignSystem.InputFields.cornerRadius
         textField.layer.borderColor = UIColor.lightGray.cgColor
         textField.layer.borderWidth = 1.0
-        textField.backgroundColor = Colors.lightGray
+        textField.backgroundColor = DesignSystem.Colors.backgroundDefault
 
-        sendButton.backgroundColor = Colors.primary
+        sendButton.backgroundColor = DesignSystem.Buttons.Primary.backgroundColor
         sendButton.layer.cornerRadius = 8.0
         sendButton.setImage(.icSend.withTintColor(.white), for: .normal)
 
@@ -65,21 +71,34 @@ final class ChatInputBar: UIView {
         }
 
         sendButton.snp.makeConstraints { make in
-            make.width.height.equalTo(50.0)
+            make.width.height.equalTo(DesignSystem.Buttons.Primary.standardHeight)
             make.centerY.equalToSuperview()
-            make.trailing.equalToSuperview().offset(-16.0)
+            make.trailing.equalToSuperview().offset(-DesignSystem.Spacing.xs)
         }
 
         textField.snp.makeConstraints { make in
             make.centerY.equalToSuperview()
-            make.height.equalTo(50.0)
-            make.leading.equalToSuperview().offset(16.0)
-            make.trailing.equalTo(sendButton.snp.leading).offset(-8.0)
+            make.height.equalTo(DesignSystem.InputFields.standardHeight)
+            make.leading.equalToSuperview().offset(DesignSystem.InputFields.horizontalPadding)
+            make.trailing.equalTo(sendButton.snp.leading).offset(-DesignSystem.Spacing.xs)
         }
     }
 
     private func setupBindings() {
         textField.addTarget(self, action: #selector(textDidChange), for: .editingChanged)
+    }
+
+    private func applyState() {
+        UIView.animate(withDuration: 0.25, delay: .zero, options: [.curveEaseInOut, .allowUserInteraction]) {
+            if self.isInputFocused {
+                self.textField.layer.borderColor = DesignSystem.Colors.primaryBlue.cgColor
+                self.textField.backgroundColor = DesignSystem.Colors.primaryBlue.withAlphaComponent(0.2)
+            } else {
+                self.textField.layer.borderColor = UIColor.lightGray.cgColor
+                self.textField.backgroundColor = DesignSystem.Colors.backgroundDefault
+            }
+            self.textField.layoutIfNeeded()
+        }
     }
 
     @objc func textDidChange() {
@@ -89,11 +108,13 @@ final class ChatInputBar: UIView {
 
     public func focus() {
         textField.becomeFirstResponder()
+        isInputFocused = true
     }
 
     public func blur() {
         textField.resignFirstResponder()
         textField.endEditing(true)
+        isInputFocused = false
     }
 
     public func setText(_ text: String) {
@@ -106,7 +127,9 @@ final class ChatInputBar: UIView {
 }
 
 private class InsetTextField: UITextField {
-    var textInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
+    var textInsets = UIEdgeInsets(
+        top: 0, left: DesignSystem.Spacing.s, bottom: 0, right: DesignSystem.Spacing.s
+    )
 
     // For text
     override func textRect(forBounds bounds: CGRect) -> CGRect {
