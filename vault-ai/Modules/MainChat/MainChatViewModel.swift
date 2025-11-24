@@ -10,7 +10,10 @@ import UIKit
 
 protocol MainChatViewModelProtocolInput {}
 
-protocol MainChatViewModelProtocolOutput {}
+protocol MainChatViewModelProtocolOutput {
+    func mockOutgoingMessage() -> ConversationBubbleView.UIModel
+    func mockIncomingMessage() -> ConversationBubbleView.UIModel
+}
 
 protocol MainChatViewModelProtocol {
     var input: MainChatViewModelProtocolInput { get }
@@ -25,5 +28,13 @@ final class MainChatViewModel: MainChatViewModelProtocol, MainChatViewModelProto
 
     init() {
         llmService = LLMService() as LLMServiceProtocol
+    }
+
+    func mockOutgoingMessage() -> ConversationBubbleView.UIModel {
+        .init(text: "Hi, I'm setting up a new screen and need the specifications for a primary button and a headline.", state: .outgoing)
+    }
+
+    func mockIncomingMessage() -> ConversationBubbleView.UIModel {
+        .init(text: "Certainly! I can grab those values from the DesignSystem for you.", state: .incoming)
     }
 }

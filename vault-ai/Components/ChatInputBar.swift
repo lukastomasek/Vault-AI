@@ -9,7 +9,7 @@ import Combine
 import SnapKit
 import UIKit
 
-final class ChatInputBar: UIView {
+final class ChatInputBar: View {
     private let topSeparator = UIView()
     private let textField = InsetTextField()
     private let sendButton = UIButton()
@@ -26,20 +26,7 @@ final class ChatInputBar: UIView {
 
     // MARK: Init
 
-    init() {
-        super.init(frame: .zero)
-
-        setupView()
-        setupConstraints()
-        setupBindings()
-    }
-
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    private func setupView() {
+    override func setupView() {
         backgroundColor = .white
 
         topSeparator.backgroundColor = .lightGray
@@ -60,7 +47,7 @@ final class ChatInputBar: UIView {
         addSubview(sendButton)
     }
 
-    private func setupConstraints() {
+    override func setupConstraints() {
         snp.makeConstraints { make in
             make.height.equalTo(150.0)
         }
@@ -84,7 +71,7 @@ final class ChatInputBar: UIView {
         }
     }
 
-    private func setupBindings() {
+    override func setupBindings() {
         textField.addTarget(self, action: #selector(textDidChange), for: .editingChanged)
     }
 
