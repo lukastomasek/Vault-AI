@@ -77,8 +77,8 @@ class MainChatViewController: UIViewController {
         becomeFirstResponder()
         chatInputBar.focus()
 
-        DispatchQueue.main.sync {
-            // self.scrollToBottom()
+        DispatchQueue.main.async {
+            self.scrollToBottom()
         }
     }
 
@@ -121,6 +121,10 @@ class MainChatViewController: UIViewController {
     }
 
     private func sendButtonTapped(_ text: String) {
+        if text.isEmpty {
+            return
+        }
+
         viewModel.input.generateResponse(from: text)
 
         let uiModel = ConversationBubbleView.UIModel(text: text, state: .outgoing)

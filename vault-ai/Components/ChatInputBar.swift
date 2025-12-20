@@ -37,6 +37,7 @@ final class ChatInputBar: View {
         topSeparator.backgroundColor = .lightGray
         textField.font = DesignSystem.InputFields.font
         textField.textAlignment = .left
+        textField.textColor = .black
         textField.placeholder = "Ask me anything!"
         textField.layer.cornerRadius = DesignSystem.InputFields.cornerRadius
         textField.layer.borderColor = UIColor.lightGray.cgColor
