@@ -18,6 +18,11 @@ final class ChatInputBar: View {
     public var onTextDidChangePublisher: AnyPublisher<String, Never> { onTextDidChangeSubject.eraseToAnyPublisher()
     }
 
+    private let onSendSubject = PassthroughSubject<String, Never>()
+    public var onSendPublisher: AnyPublisher<String, Never> {
+        onSendSubject.eraseToAnyPublisher()
+    }
+
     private var isInputFocused: Bool = false {
         didSet {
             applyState()
@@ -73,6 +78,7 @@ final class ChatInputBar: View {
 
     override func setupBindings() {
         textField.addTarget(self, action: #selector(textDidChange), for: .editingChanged)
+        sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
     }
 
     private func applyState() {
@@ -93,6 +99,11 @@ final class ChatInputBar: View {
         onTextDidChangeSubject.send(text)
     }
 
+    @objc func sendTapped() {
+        let text = textField.text ?? ""
+        onSendSubject.send(text)
+    }
+
     public func focus() {
         textField.becomeFirstResponder()
         isInputFocused = true
@@ -110,6 +121,14 @@ final class ChatInputBar: View {
 
     public func clear() {
         textField.text = ""
+    }
+
+    public func setLoadingState(_ isLoading: Bool) {
+        if isLoading {
+            sendButton.isEnabled = false
+        } else {
+            sendButton.isEnabled = true
+        }
     }
 }
 

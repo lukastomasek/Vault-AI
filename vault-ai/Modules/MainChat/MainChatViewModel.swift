@@ -5,14 +5,20 @@
 //  Created by Lukas Tomasek on 2025-11-19.
 //
 
+import Combine
 import Foundation
 import UIKit
 
-protocol MainChatViewModelProtocolInput {}
+protocol MainChatViewModelProtocolInput {
+    func generateResponse(from inputText: String)
+}
 
 protocol MainChatViewModelProtocolOutput {
     func mockOutgoingMessage() -> ConversationBubbleView.UIModel
     func mockIncomingMessage() -> ConversationBubbleView.UIModel
+
+    var loadingPublisher: AnyPublisher<Bool, Never> { get }
+    var responsePublisher: AnyPublisher<ConversationBubbleView.UIModel, Never> { get }
 }
 
 protocol MainChatViewModelProtocol {
@@ -26,10 +32,44 @@ final class MainChatViewModel: MainChatViewModelProtocol, MainChatViewModelProto
 
     private let llmService: LLMServiceProtocol
 
-    init() {
-        llmService = LLMService() as LLMServiceProtocol
+    private var disposeBag = Set<AnyCancellable>()
+
+    private let responseSubject = PassthroughSubject<ConversationBubbleView.UIModel, Never>()
+    var responsePublisher: AnyPublisher<ConversationBubbleView.UIModel, Never> {
+        responseSubject.eraseToAnyPublisher()
     }
 
+    private let loadingSubject = PassthroughSubject<Bool, Never>()
+    var loadingPublisher: AnyPublisher<Bool, Never> {
+        loadingSubject.eraseToAnyPublisher()
+    }
+
+    init() {
+        llmService = LLMService() as LLMServiceProtocol
+        llmService.initialize()
+    }
+
+    func generateResponse(from inputText: String) {
+        if inputText.isEmpty {
+            return
+        }
+
+        loadingSubject.send(true)
+        llmService.generateResponse(for: inputText)
+            .sink { [weak self] completion in
+                self?.loadingSubject.send(false)
+                if case let .failure(error) = completion {
+                    print(error)
+                }
+            } receiveValue: { responseText in
+                let uiModel = ConversationBubbleView.UIModel(text: responseText, state: .incoming)
+                self.responseSubject.send(uiModel)
+            }
+            .store(in: &disposeBag)
+    }
+}
+
+extension MainChatViewModel {
     func mockOutgoingMessage() -> ConversationBubbleView.UIModel {
         .init(text: "Hi, I'm setting up a new screen and need the specifications for a primary button and a headline.", state: .outgoing)
     }

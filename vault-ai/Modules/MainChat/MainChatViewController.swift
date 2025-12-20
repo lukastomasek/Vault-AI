@@ -5,32 +5,28 @@
 //  Created by Lukas Tomasek on 2025-11-19.
 //
 
+import Combine
 import Foundation
 import SnapKit
 import UIKit
 
 class MainChatViewController: UIViewController {
+    // MARK: Properties
+
     private let viewModel: MainChatViewModelProtocol
+
+    private var disposeBag = Set<AnyCancellable>()
+
+    // MARK: UI Elements
 
     private let chatInputBar = ChatInputBar()
 
     override var inputAccessoryView: UIView? { chatInputBar }
     override var canBecomeFirstResponder: Bool { true }
 
-    private let testOutgoingMessageView = ConversationBubbleView(
-        config: .init(
-            backgroundColor: DesignSystem.Colors.primaryBlue, textColor: .white
-        )
-    )
-
-    private let testIncomingMessageView = ConversationBubbleView(
-        config: .init(
-            backgroundColor: DesignSystem.Colors.backgroundDefault, textColor: .black
-        )
-    )
-
     private let scrollView = UIScrollView()
     private let mainStackView = UIStackView()
+    private var currentIndicatorView: IndicatorView? = nil
 
     // MARK: - Initialization
 
@@ -48,6 +44,7 @@ class MainChatViewController: UIViewController {
         super.viewDidLoad()
         setupView()
         setupConstraints()
+        setupBindings()
     }
 
     private func setupView() {
@@ -70,14 +67,8 @@ class MainChatViewController: UIViewController {
             right: DesignSystem.Spacing.m
         )
 
-        testIncomingMessageView.bind(with: viewModel.output.mockIncomingMessage())
-        testOutgoingMessageView.bind(with: viewModel.output.mockOutgoingMessage())
-
         view.addSubview(scrollView)
         scrollView.addSubview(mainStackView)
-
-        mainStackView.addArrangedSubview(testOutgoingMessageView)
-        mainStackView.addArrangedSubview(testIncomingMessageView)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -97,5 +88,74 @@ class MainChatViewController: UIViewController {
             make.edges.equalToSuperview()
             make.width.equalTo(view.snp.width)
         }
+    }
+
+    private func setupBindings() {
+        chatInputBar.onSendPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.sendButtonTapped(text)
+            }.store(in: &disposeBag)
+
+        viewModel.output.responsePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] uiModel in
+                self?.createBubbleView(with: uiModel, showIndicator: false)
+            }.store(in: &disposeBag)
+
+        viewModel.output.loadingPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                self?.chatInputBar.setLoadingState(isLoading)
+            }.store(in: &disposeBag)
+    }
+
+    private func sendButtonTapped(_ text: String) {
+        viewModel.input.generateResponse(from: text)
+
+        let uiModel = ConversationBubbleView.UIModel(text: text, state: .outgoing)
+        createBubbleView(with: uiModel, showIndicator: true)
+        chatInputBar.clear()
+    }
+}
+
+extension MainChatViewController {
+    private func createBubbleView(with uiModel: ConversationBubbleView.UIModel, showIndicator: Bool) {
+        let configuration: ConversationBubbleView.Configuration
+        switch uiModel.state {
+        case .incoming:
+            configuration = .init(backgroundColor: DesignSystem.Colors.primaryBlue, textColor: .white)
+        case .outgoing:
+            configuration = .init(backgroundColor: DesignSystem.Colors.backgroundDefault, textColor: .black)
+        }
+
+        let messageView = ConversationBubbleView(config: configuration)
+
+        messageView.bind(with: uiModel)
+        mainStackView.addArrangedSubview(messageView)
+
+        if showIndicator {
+            insertLoadingIndicatorView()
+        } else {
+            removeIndicatorView()
+        }
+    }
+
+    private func insertLoadingIndicatorView() {
+        let indicatorView = IndicatorView()
+        mainStackView.addArrangedSubview(indicatorView)
+        indicatorView.setDirection(.left)
+        indicatorView.start()
+        currentIndicatorView = indicatorView
+    }
+
+    func removeIndicatorView() {
+        if let currentIndicatorView {
+            mainStackView.removeArrangedSubview(currentIndicatorView)
+            currentIndicatorView.stop()
+            currentIndicatorView.removeFromSuperview()
+        }
+
+        currentIndicatorView = nil
     }
 }
