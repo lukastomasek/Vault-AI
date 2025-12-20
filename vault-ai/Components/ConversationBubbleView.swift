@@ -70,6 +70,12 @@ final class ConversationBubbleView: View {
         containerView.addSubview(textLabel)
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        applyShadow(to: containerView)
+    }
+
     override func setupConstraints() {
         super.setupConstraints()
 
