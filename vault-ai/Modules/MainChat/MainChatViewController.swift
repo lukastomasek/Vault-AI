@@ -50,8 +50,8 @@ class MainChatViewController: UIViewController {
     private func setupView() {
         view.backgroundColor = .white
 
+        scrollView.showsHorizontalScrollIndicator = false
         scrollView.showsVerticalScrollIndicator = true
-        scrollView.showsVerticalScrollIndicator = false
         scrollView.alwaysBounceVertical = true
         scrollView.alwaysBounceHorizontal = false
 
@@ -78,15 +78,19 @@ class MainChatViewController: UIViewController {
         chatInputBar.focus()
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateBottomInsetForAccessory()
+    }
+
     private func setupConstraints() {
         scrollView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-            make.width.equalTo(view.snp.width)
+            make.width.equalToSuperview()
+            make.height.equalToSuperview()
         }
 
         mainStackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-            make.width.equalTo(view.snp.width)
+            make.width.equalTo(scrollView.frameLayoutGuide)
         }
     }
 
@@ -117,7 +121,20 @@ class MainChatViewController: UIViewController {
         createBubbleView(with: uiModel, showIndicator: true)
         chatInputBar.clear()
     }
+
+    private func updateBottomInsetForAccessory() {
+        let accessoryHeight: CGFloat = inputAccessoryView?.bounds.height ?? .zero
+        let bottomInset: CGFloat = accessoryHeight + view.safeAreaInsets.bottom
+
+        // Only update if it actually changed (prevents jitter).
+        if scrollView.safeAreaInsets.bottom != bottomInset {
+            scrollView.contentInset.bottom = bottomInset
+            scrollView.verticalScrollIndicatorInsets.bottom = bottomInset
+        }
+    }
 }
+
+// MARK: - Extension
 
 extension MainChatViewController {
     private func createBubbleView(with uiModel: ConversationBubbleView.UIModel, showIndicator: Bool) {
