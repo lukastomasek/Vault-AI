@@ -76,6 +76,10 @@ class MainChatViewController: UIViewController {
 
         becomeFirstResponder()
         chatInputBar.focus()
+
+        DispatchQueue.main.sync {
+            // self.scrollToBottom()
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -95,6 +99,8 @@ class MainChatViewController: UIViewController {
     }
 
     private func setupBindings() {
+        registerClickOnScrollView()
+
         chatInputBar.onSendPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
@@ -131,6 +137,27 @@ class MainChatViewController: UIViewController {
             scrollView.contentInset.bottom = bottomInset
             scrollView.verticalScrollIndicatorInsets.bottom = bottomInset
         }
+    }
+
+    private func scrollToBottom(animated: Bool = true) {
+        // Ensure layout is up-to-date before calculating content size
+        view.layoutIfNeeded()
+        let contentHeight = scrollView.contentSize.height
+        let visibleHeight = scrollView.bounds.size.height - scrollView.adjustedContentInset.top - scrollView.adjustedContentInset.bottom
+        let yOffset = max(-scrollView.adjustedContentInset.top, contentHeight - visibleHeight)
+        scrollView.setContentOffset(CGPoint(x: 0, y: yOffset), animated: animated)
+    }
+
+    func registerClickOnScrollView() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(didTapOnScrollView))
+        tap.cancelsTouchesInView = false
+        scrollView.addGestureRecognizer(tap)
+    }
+
+    @objc private func didTapOnScrollView() {
+        view.endEditing(true)
+        resignFirstResponder()
+        chatInputBar.blur()
     }
 }
 
