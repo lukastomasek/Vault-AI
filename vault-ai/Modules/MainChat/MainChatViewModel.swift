@@ -46,7 +46,14 @@ final class MainChatViewModel: MainChatViewModelProtocol, MainChatViewModelProto
 
     init() {
         llmService = LLMService() as LLMServiceProtocol
-        llmService.initialize()
+        let status = llmService.initialize()
+
+        switch status {
+        case .success:
+            print("LLM INIT")
+        case let .failure(message):
+            print("LLM FAIRURE: \(message)")
+        }
     }
 
     func generateResponse(from inputText: String) {
