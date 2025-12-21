@@ -78,7 +78,7 @@ class MainChatViewController: UIViewController {
         chatInputBar.focus()
 
         DispatchQueue.main.async {
-            self.scrollToBottom()
+            self.scrollToBottomIfNeeded()
         }
     }
 
@@ -94,6 +94,7 @@ class MainChatViewController: UIViewController {
         }
 
         mainStackView.snp.makeConstraints { make in
+            make.edges.equalTo(scrollView.contentLayoutGuide)
             make.width.equalTo(scrollView.frameLayoutGuide)
         }
     }
@@ -137,13 +138,13 @@ class MainChatViewController: UIViewController {
         let bottomInset: CGFloat = accessoryHeight + view.safeAreaInsets.bottom
 
         // Only update if it actually changed (prevents jitter).
-        if scrollView.safeAreaInsets.bottom != bottomInset {
+        if scrollView.contentInset.bottom != bottomInset {
             scrollView.contentInset.bottom = bottomInset
             scrollView.verticalScrollIndicatorInsets.bottom = bottomInset
         }
     }
 
-    private func scrollToBottom(animated: Bool = true) {
+    private func scrollToBottomIfNeeded(animated: Bool = true) {
         // Ensure layout is up-to-date before calculating content size
         view.layoutIfNeeded()
         let contentHeight = scrollView.contentSize.height
@@ -160,7 +161,6 @@ class MainChatViewController: UIViewController {
 
     @objc private func didTapOnScrollView() {
         view.endEditing(true)
-        resignFirstResponder()
         chatInputBar.blur()
     }
 }
@@ -187,6 +187,10 @@ extension MainChatViewController {
         } else {
             removeIndicatorView()
         }
+
+        DispatchQueue.main.async {
+            self.scrollToBottomIfNeeded()
+        }
     }
 
     private func insertLoadingIndicatorView() {
@@ -197,7 +201,7 @@ extension MainChatViewController {
         currentIndicatorView = indicatorView
     }
 
-    func removeIndicatorView() {
+    private func removeIndicatorView() {
         if let currentIndicatorView {
             mainStackView.removeArrangedSubview(currentIndicatorView)
             currentIndicatorView.stop()
