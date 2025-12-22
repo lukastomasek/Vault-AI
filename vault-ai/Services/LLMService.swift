@@ -11,6 +11,8 @@ import FoundationModels
 
 protocol LLMServiceProtocol {
     func initialize() -> LLMState
+    func resetConversation()
+    func getCurrentTranscript() -> Transcript?
     func generateResponse(for prompt: String) -> AnyPublisher<String, Error>
 }
 
@@ -27,6 +29,7 @@ enum LLMState: Equatable {
 final class LLMService: LLMServiceProtocol {
     private let config: LLMConfiguration
     private var isInitialized: Bool = false
+    private var currentSession: LanguageModelSession?
 
     init(
         config: LLMConfiguration =
@@ -49,6 +52,7 @@ final class LLMService: LLMServiceProtocol {
         switch model.availability {
         case .available:
             print("SYSML: Available")
+            currentSession = LanguageModelSession(instructions: config.defaultinstructions)
             state = .success
         case .unavailable(.deviceNotEligible):
             print("SYSML: Unavailable: Device not eligible")
@@ -81,14 +85,21 @@ final class LLMService: LLMServiceProtocol {
             Future { promise in
                 Task {
                     do {
-                        let session = LanguageModelSession(instructions: self.config.defaultinstructions)
-                        let response = try await session.respond(to: prompt, options: options)
-                        promise(.success(response.content))
+                        let response = try await self.currentSession?.respond(to: prompt, options: options)
+                        promise(.success(response?.content ?? ""))
                     } catch {
                         promise(.failure(error))
                     }
                 }
             }
         }.eraseToAnyPublisher()
+    }
+
+    func resetConversation() {
+        currentSession = LanguageModelSession(instructions: config.defaultinstructions)
+    }
+
+    func getCurrentTranscript() -> Transcript? {
+        currentSession?.transcript
     }
 }

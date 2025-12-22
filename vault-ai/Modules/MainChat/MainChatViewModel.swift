@@ -19,6 +19,7 @@ protocol MainChatViewModelProtocolOutput {
 
     var loadingPublisher: AnyPublisher<Bool, Never> { get }
     var responsePublisher: AnyPublisher<ConversationBubbleView.UIModel, Never> { get }
+    var streamPublisher: AnyPublisher<ConversationBubbleView.UIModel, Never> { get }
 }
 
 protocol MainChatViewModelProtocol {
@@ -42,6 +43,11 @@ final class MainChatViewModel: MainChatViewModelProtocol, MainChatViewModelProto
     private let loadingSubject = PassthroughSubject<Bool, Never>()
     var loadingPublisher: AnyPublisher<Bool, Never> {
         loadingSubject.eraseToAnyPublisher()
+    }
+
+    private let streamSubject = PassthroughSubject<ConversationBubbleView.UIModel, Never>()
+    var streamPublisher: AnyPublisher<ConversationBubbleView.UIModel, Never> {
+        streamSubject.eraseToAnyPublisher()
     }
 
     init() {
@@ -71,8 +77,40 @@ final class MainChatViewModel: MainChatViewModelProtocol, MainChatViewModelProto
             } receiveValue: { responseText in
                 let uiModel = ConversationBubbleView.UIModel(text: responseText, state: .incoming)
                 self.responseSubject.send(uiModel)
+                self.initStreaming(uiModel)
             }
             .store(in: &disposeBag)
+    }
+
+    private func initStreaming(_ uiModel: ConversationBubbleView.UIModel) {
+        streamMessage(uiModel)
+            .sink { [weak self] uiModel in
+                self?.streamSubject.send(uiModel)
+            }.store(in: &disposeBag)
+    }
+
+    private func streamMessage(_ uiModel: ConversationBubbleView.UIModel) -> AnyPublisher<ConversationBubbleView.UIModel, Never> {
+        let message = uiModel.text
+
+        let words = message
+            .split(whereSeparator: { $0.isWhitespace || $0.isNewline })
+            .map(String.init)
+
+        let timer = Timer.publish(every: 0.05, on: .main, in: .common)
+            .autoconnect()
+
+        return words.publisher
+            .zip(timer) // emit one word per timer tick
+            .scan("") { partial, pair in
+                let word = pair.0
+                return partial.isEmpty ? word : "\(partial) \(word)"
+            }
+            .map { partial in
+                var streamed = uiModel
+                streamed.text = partial
+                return streamed
+            }
+            .eraseToAnyPublisher()
     }
 }
 
