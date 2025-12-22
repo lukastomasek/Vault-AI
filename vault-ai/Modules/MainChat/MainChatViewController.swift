@@ -186,7 +186,6 @@ extension MainChatViewController {
         isStreaming: Bool = false
     ) {
         if let currentIncomingMessageView = currentIncomingMessageView, isStreaming {
-            print("STREAMING", uiModel.text)
             currentIncomingMessageView.bind(with: uiModel)
         } else {
             let configuration: ConversationBubbleView.Configuration

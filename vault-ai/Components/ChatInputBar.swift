@@ -80,6 +80,8 @@ final class ChatInputBar: View {
     override func setupBindings() {
         textField.addTarget(self, action: #selector(textDidChange), for: .editingChanged)
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
+        textField.addTarget(self, action: #selector(didBeginEditing), for: .editingDidBegin)
+        textField.addTarget(self, action: #selector(didEndEditing), for: .editingDidEnd)
     }
 
     private func applyState() {
@@ -103,6 +105,14 @@ final class ChatInputBar: View {
     @objc func sendTapped() {
         let text = textField.text ?? ""
         onSendSubject.send(text)
+    }
+
+    @objc func didBeginEditing() {
+        isInputFocused = true
+    }
+
+    @objc func didEndEditing() {
+        isInputFocused = false
     }
 
     public func focus() {
@@ -130,26 +140,5 @@ final class ChatInputBar: View {
         } else {
             sendButton.isEnabled = true
         }
-    }
-}
-
-private class InsetTextField: UITextField {
-    var textInsets = UIEdgeInsets(
-        top: 0, left: DesignSystem.Spacing.s, bottom: 0, right: DesignSystem.Spacing.s
-    )
-
-    // For text
-    override func textRect(forBounds bounds: CGRect) -> CGRect {
-        return bounds.inset(by: textInsets)
-    }
-
-    // For editing text
-    override func editingRect(forBounds bounds: CGRect) -> CGRect {
-        return bounds.inset(by: textInsets)
-    }
-
-    // For placeholder
-    override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
-        return bounds.inset(by: textInsets)
     }
 }
