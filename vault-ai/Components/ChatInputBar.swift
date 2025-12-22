@@ -103,6 +103,7 @@ final class ChatInputBar: View {
     }
 
     @objc func sendTapped() {
+        Haptics.impact()
         let text = textField.text ?? ""
         onSendSubject.send(text)
     }
