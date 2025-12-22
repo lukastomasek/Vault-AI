@@ -28,7 +28,7 @@ final class ConversationBubbleView: View {
     }
 
     struct UIModel {
-        let text: String
+        var text: String
         let state: State
         let copyActionEnabled: Bool
 
@@ -93,6 +93,7 @@ final class ConversationBubbleView: View {
         textLabel.text = uiModel.text
         textLabel.textColor = config.textColor
         containerView.backgroundColor = config.backgroundColor
+
 
         containerView.snp.remakeConstraints { make in
             make.top.bottom.equalToSuperview()

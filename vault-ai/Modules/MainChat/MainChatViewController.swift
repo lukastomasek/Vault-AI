@@ -26,7 +26,9 @@ class MainChatViewController: UIViewController {
 
     private let scrollView = UIScrollView()
     private let mainStackView = UIStackView()
+
     private var currentIndicatorView: IndicatorView? = nil
+    private var currentIncomingMessageView: ConversationBubbleView? = nil
 
     // MARK: - Initialization
 
@@ -58,7 +60,7 @@ class MainChatViewController: UIViewController {
         mainStackView.axis = .vertical
         mainStackView.spacing = DesignSystem.Spacing.m
         mainStackView.alignment = .fill
-        mainStackView.distribution = .fillProportionally
+        mainStackView.distribution = .fill
         mainStackView.isLayoutMarginsRelativeArrangement = true
         mainStackView.layoutMargins = .init(
             top: .zero,
@@ -108,10 +110,18 @@ class MainChatViewController: UIViewController {
                 self?.sendButtonTapped(text)
             }.store(in: &disposeBag)
 
-        viewModel.output.responsePublisher
+        /*
+         viewModel.output.responsePublisher
+             .receive(on: DispatchQueue.main)
+             .sink { [weak self] uiModel in
+                 self?.createBubbleView(with: uiModel, showIndicator: false)
+             }.store(in: &disposeBag)
+          */
+
+        viewModel.output.streamPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] uiModel in
-                self?.createBubbleView(with: uiModel, showIndicator: false)
+                self?.createBubbleView(with: uiModel, showIndicator: false, isStreaming: true)
             }.store(in: &disposeBag)
 
         viewModel.output.loadingPublisher
@@ -125,6 +135,8 @@ class MainChatViewController: UIViewController {
         if text.isEmpty {
             return
         }
+
+        currentIncomingMessageView = nil
 
         viewModel.input.generateResponse(from: text)
 
@@ -168,19 +180,31 @@ class MainChatViewController: UIViewController {
 // MARK: - Extension
 
 extension MainChatViewController {
-    private func createBubbleView(with uiModel: ConversationBubbleView.UIModel, showIndicator: Bool) {
-        let configuration: ConversationBubbleView.Configuration
-        switch uiModel.state {
-        case .incoming:
-            configuration = .init(backgroundColor: DesignSystem.Colors.primaryBlue, textColor: .white)
-        case .outgoing:
-            configuration = .init(backgroundColor: DesignSystem.Colors.backgroundDefault, textColor: .black)
+    private func createBubbleView(
+        with uiModel: ConversationBubbleView.UIModel,
+        showIndicator: Bool,
+        isStreaming: Bool = false
+    ) {
+        if let currentIncomingMessageView = currentIncomingMessageView, isStreaming {
+            currentIncomingMessageView.bind(with: uiModel)
+        } else {
+            let configuration: ConversationBubbleView.Configuration
+            switch uiModel.state {
+            case .incoming:
+                configuration = .init(backgroundColor: DesignSystem.Colors.primaryBlue, textColor: .white)
+            case .outgoing:
+                configuration = .init(backgroundColor: DesignSystem.Colors.backgroundDefault, textColor: .black)
+            }
+
+            let messageView = ConversationBubbleView(config: configuration)
+
+            if uiModel.state == .incoming {
+                currentIncomingMessageView = messageView
+            }
+
+            messageView.bind(with: uiModel)
+            mainStackView.addArrangedSubview(messageView)
         }
-
-        let messageView = ConversationBubbleView(config: configuration)
-
-        messageView.bind(with: uiModel)
-        mainStackView.addArrangedSubview(messageView)
 
         if showIndicator {
             insertLoadingIndicatorView()
@@ -189,7 +213,9 @@ extension MainChatViewController {
         }
 
         DispatchQueue.main.async {
-            self.scrollToBottomIfNeeded()
+            if !isStreaming {
+                self.scrollToBottomIfNeeded()
+            }
         }
     }
 
