@@ -54,6 +54,7 @@ final class MainChatViewModel: MainChatViewModelProtocol, MainChatViewModelProto
         llmService = LLMService() as LLMServiceProtocol
         let status = llmService.initialize()
 
+        // TODO: show modal
         switch status {
         case .success:
             print("LLM INIT")
@@ -72,6 +73,7 @@ final class MainChatViewModel: MainChatViewModelProtocol, MainChatViewModelProto
             .sink { [weak self] completion in
                 self?.loadingSubject.send(false)
                 if case let .failure(error) = completion {
+                    // TODO: show modal
                     print(error)
                 }
             } receiveValue: { responseText in
