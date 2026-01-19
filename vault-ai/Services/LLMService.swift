@@ -19,6 +19,7 @@ protocol LLMServiceProtocol {
 struct LLMConfiguration {
     let defaultinstructions: String
     let temperature: Double
+    let maxTokenCount: Int?
 }
 
 enum LLMState: Equatable {
@@ -38,7 +39,8 @@ final class LLMService: LLMServiceProtocol {
                 Keep the conversatioon concise and make them build naturally
                 from the given topic.
                 """,
-                temperature: 1.0
+                temperature: 1.0,
+                maxTokenCount: 514
             ))
     {
         self.config = config
@@ -52,7 +54,10 @@ final class LLMService: LLMServiceProtocol {
         switch model.availability {
         case .available:
             print("SYSML: Available")
-            currentSession = LanguageModelSession(instructions: config.defaultinstructions)
+            currentSession = LanguageModelSession(
+                tools: [CurrentDateTool()],
+                instructions: config.defaultinstructions
+            )
             state = .success
         case .unavailable(.deviceNotEligible):
             print("SYSML: Unavailable: Device not eligible")
@@ -79,7 +84,10 @@ final class LLMService: LLMServiceProtocol {
             return Fail(error: NSError(domain: "LLMService is not initialized", code: 0, userInfo: nil)).eraseToAnyPublisher()
         }
 
-        let options = GenerationOptions(temperature: config.temperature)
+        let options = GenerationOptions(
+            temperature: config.temperature,
+            maximumResponseTokens: config.maxTokenCount
+        )
 
         return Deferred {
             Future { promise in
