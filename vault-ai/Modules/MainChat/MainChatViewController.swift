@@ -44,6 +44,7 @@ class MainChatViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupNavigationBar()
         setupView()
         setupConstraints()
         setupBindings()
@@ -63,7 +64,7 @@ class MainChatViewController: UIViewController {
         mainStackView.distribution = .fill
         mainStackView.isLayoutMarginsRelativeArrangement = true
         mainStackView.layoutMargins = .init(
-            top: .zero,
+            top: DesignSystem.Spacing.m,
             left: DesignSystem.Spacing.m,
             bottom: DesignSystem.Spacing.m,
             right: DesignSystem.Spacing.m
@@ -91,8 +92,8 @@ class MainChatViewController: UIViewController {
 
     private func setupConstraints() {
         scrollView.snp.makeConstraints { make in
-            make.width.equalToSuperview()
-            make.height.equalToSuperview()
+            make.top.equalTo(view.safeAreaInsets.bottom)
+            make.trailing.leading.bottom.equalToSuperview()
         }
 
         mainStackView.snp.makeConstraints { make in
@@ -189,11 +190,18 @@ extension MainChatViewController {
             currentIncomingMessageView.bind(with: uiModel)
         } else {
             let configuration: ConversationBubbleView.Configuration
+            
             switch uiModel.state {
             case .incoming:
-                configuration = .init(backgroundColor: DesignSystem.Colors.primaryBlue, textColor: .white)
+                configuration = .init(
+                    backgroundColor: DesignSystem.Colors.backgroundDefault,
+                    textColor: .black
+                )
             case .outgoing:
-                configuration = .init(backgroundColor: DesignSystem.Colors.backgroundDefault, textColor: .black)
+                configuration = .init(
+                    backgroundColor: DesignSystem.Colors.primaryBlue,
+                    textColor: .white
+                )
             }
 
             let messageView = ConversationBubbleView(config: configuration)
