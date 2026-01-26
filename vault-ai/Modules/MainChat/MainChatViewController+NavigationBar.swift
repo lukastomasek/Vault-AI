@@ -34,7 +34,7 @@ extension MainChatViewController {
         appearance.backgroundColor = .white
 
         appearance.shadowColor = UIColor.separator.withAlphaComponent(0.25)
-        appearance.titleTextAttributes = [.font: UIFont.systemFont(ofSize: 17, weight: .semibold)]
+        appearance.titleTextAttributes = [.font: UIFont.systemFont(ofSize: 17, weight: .semibold), .foregroundColor: UIColor.black]
         appearance.largeTitleTextAttributes = [.font: UIFont.systemFont(ofSize: 34, weight: .bold)]
 
         navigationController?.navigationBar.standardAppearance = appearance

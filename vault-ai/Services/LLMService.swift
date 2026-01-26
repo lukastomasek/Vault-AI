@@ -27,6 +27,19 @@ enum LLMState: Equatable {
     case failure(message: String)
 }
 
+enum LLMError: LocalizedError {
+    case notInitialized
+
+    var message: String {
+        switch self {
+        case .notInitialized:
+            return "The LLM has not been initialized yet."
+        default:
+            return "Unknown error."
+        }
+    }
+}
+
 final class LLMService: LLMServiceProtocol {
     private let config: LLMConfiguration
     private var isInitialized: Bool = false
@@ -81,7 +94,7 @@ final class LLMService: LLMServiceProtocol {
     func generateResponse(for prompt: String) -> AnyPublisher<String, Error> {
         if !isInitialized {
             print("Must call initialize() before using LLMService")
-            return Fail(error: NSError(domain: "LLMService is not initialized", code: 0, userInfo: nil)).eraseToAnyPublisher()
+            return Fail(error: LLMError.notInitialized).eraseToAnyPublisher()
         }
 
         let options = GenerationOptions(
