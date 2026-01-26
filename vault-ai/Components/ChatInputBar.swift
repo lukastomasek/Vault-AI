@@ -10,7 +10,6 @@ import SnapKit
 import UIKit
 
 final class ChatInputBar: View {
-    private let topSeparator = UIView()
     private let textField = InsetTextField()
     private let sendButton = UIButton()
 
@@ -34,21 +33,30 @@ final class ChatInputBar: View {
     override func setupView() {
         backgroundColor = .white
 
-        topSeparator.backgroundColor = .lightGray
         textField.font = DesignSystem.InputFields.font
         textField.textAlignment = .left
         textField.textColor = .black
         textField.placeholder = "Ask me anything!"
-        textField.layer.cornerRadius = DesignSystem.InputFields.cornerRadius
+        textField.layer.cornerRadius = DesignSystem.InputFields.standardHeight / 2.0
         textField.layer.borderColor = UIColor.lightGray.cgColor
         textField.layer.borderWidth = 1.0
         textField.backgroundColor = DesignSystem.Colors.backgroundDefault
+        textField.textInsets = .init(
+            top: .zero,
+            left: DesignSystem.Spacing.s,
+            bottom: .zero,
+            right: DesignSystem.Buttons.Primary.standardHeight + DesignSystem.Spacing.m
+        )
 
+        let imgConfig = UIImage.SymbolConfiguration(pointSize: 22.0, weight: .medium)
         sendButton.backgroundColor = DesignSystem.Buttons.Primary.backgroundColor
-        sendButton.layer.cornerRadius = 8.0
-        sendButton.setImage(.icSend.withTintColor(.white), for: .normal)
+        sendButton.layer.cornerRadius = DesignSystem.Buttons.Primary.standardHeight / 2.0
+        sendButton.setImage(
+            UIImage(systemName: "arrow.up.circle", withConfiguration: imgConfig),
+            for: .normal
+        )
+        sendButton.tintColor = .white
 
-        addSubview(topSeparator)
         addSubview(textField)
         addSubview(sendButton)
     }
@@ -58,22 +66,16 @@ final class ChatInputBar: View {
             make.height.equalTo(150.0)
         }
 
-        topSeparator.snp.makeConstraints { make in
-            make.top.trailing.leading.equalToSuperview()
-            make.height.equalTo(1.0)
+        textField.snp.makeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.height.equalTo(DesignSystem.InputFields.standardHeight)
+            make.leading.trailing.equalToSuperview().inset(DesignSystem.InputFields.horizontalPadding)
         }
 
         sendButton.snp.makeConstraints { make in
             make.width.height.equalTo(DesignSystem.Buttons.Primary.standardHeight)
             make.centerY.equalToSuperview()
-            make.trailing.equalToSuperview().offset(-DesignSystem.Spacing.xs)
-        }
-
-        textField.snp.makeConstraints { make in
-            make.centerY.equalToSuperview()
-            make.height.equalTo(DesignSystem.InputFields.standardHeight)
-            make.leading.equalToSuperview().offset(DesignSystem.InputFields.horizontalPadding)
-            make.trailing.equalTo(sendButton.snp.leading).offset(-DesignSystem.Spacing.xs)
+            make.trailing.equalTo(textField.snp.trailing).offset(-DesignSystem.Spacing.xs)
         }
     }
 
@@ -87,8 +89,6 @@ final class ChatInputBar: View {
     private func applyState() {
         UIView.animate(withDuration: 0.25, delay: .zero, options: [.curveEaseInOut, .allowUserInteraction]) {
             if self.isInputFocused {
-                self.textField.layer.borderColor = DesignSystem.Colors.primaryBlue.cgColor
-                self.textField.backgroundColor = DesignSystem.Colors.primaryBlue.withAlphaComponent(0.2)
             } else {
                 self.textField.layer.borderColor = UIColor.lightGray.cgColor
                 self.textField.backgroundColor = DesignSystem.Colors.backgroundDefault
