@@ -11,6 +11,7 @@ import UIKit
 
 protocol MainChatViewModelProtocolInput {
     func generateResponse(from inputText: String)
+    func copyToClipboard(_ text: String?)
 }
 
 protocol MainChatViewModelProtocolOutput {
@@ -20,6 +21,7 @@ protocol MainChatViewModelProtocolOutput {
     var loadingPublisher: AnyPublisher<Bool, Never> { get }
     var responsePublisher: AnyPublisher<ConversationBubbleView.UIModel, Never> { get }
     var streamPublisher: AnyPublisher<ConversationBubbleView.UIModel, Never> { get }
+    var showCopyTextAlertPublisher: AnyPublisher<Bool, Never> { get }
 }
 
 protocol MainChatViewModelProtocol {
@@ -50,6 +52,11 @@ final class MainChatViewModel: MainChatViewModelProtocol, MainChatViewModelProto
         streamSubject.eraseToAnyPublisher()
     }
 
+    private let showCopyTextAlertSubject = PassthroughSubject<Bool, Never>()
+    var showCopyTextAlertPublisher: AnyPublisher<Bool, Never> {
+        showCopyTextAlertSubject.eraseToAnyPublisher()
+    }
+
     init() {
         llmService = LLMService() as LLMServiceProtocol
         let status = llmService.initialize()
@@ -60,6 +67,13 @@ final class MainChatViewModel: MainChatViewModelProtocol, MainChatViewModelProto
             print("LLM INIT")
         case let .failure(message):
             print("LLM FAIRURE: \(message)")
+        }
+    }
+
+    func copyToClipboard(_ text: String?) {
+        if let text {
+            UIPasteboard.general.string = text
+            showCopyTextAlertSubject.send(true)
         }
     }
 
@@ -77,7 +91,11 @@ final class MainChatViewModel: MainChatViewModelProtocol, MainChatViewModelProto
                     print(error)
                 }
             } receiveValue: { responseText in
-                let uiModel = ConversationBubbleView.UIModel(text: responseText, state: .incoming)
+                let uiModel = ConversationBubbleView.UIModel(
+                    text: responseText,
+                    state: .incoming,
+                    copyActionEnabled: true
+                )
                 self.responseSubject.send(uiModel)
                 self.initStreaming(uiModel)
             }
