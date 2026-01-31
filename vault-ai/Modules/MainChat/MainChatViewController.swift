@@ -59,7 +59,7 @@ class MainChatViewController: UIViewController {
         scrollView.alwaysBounceHorizontal = false
 
         mainStackView.axis = .vertical
-        mainStackView.spacing = DesignSystem.Spacing.m
+        mainStackView.spacing = DesignSystem.Spacing.l
         mainStackView.alignment = .fill
         mainStackView.distribution = .fill
         mainStackView.isLayoutMarginsRelativeArrangement = true
@@ -130,6 +130,28 @@ class MainChatViewController: UIViewController {
             .sink { [weak self] isLoading in
                 self?.chatInputBar.setLoadingState(isLoading)
             }.store(in: &disposeBag)
+
+        viewModel.output.showCopyTextAlertPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] show in
+                if show {
+                    self?.showCopyAlert()
+                }
+            }.store(in: &disposeBag)
+    }
+
+    private func showCopyAlert() {
+        let alert = UIAlertController(
+            title: "Copied!",
+            message: "Text copied to clipboard.",
+            preferredStyle: .alert
+        )
+
+        present(alert, animated: true)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            alert.dismiss(animated: true)
+        }
     }
 
     private func sendButtonTapped(_ text: String) {
@@ -141,7 +163,7 @@ class MainChatViewController: UIViewController {
 
         viewModel.input.generateResponse(from: text)
 
-        let uiModel = ConversationBubbleView.UIModel(text: text, state: .outgoing)
+        let uiModel = ConversationBubbleView.UIModel(text: text, state: .outgoing, copyActionEnabled: false)
         createBubbleView(with: uiModel, showIndicator: true)
         chatInputBar.clear()
     }
@@ -190,12 +212,12 @@ extension MainChatViewController {
             currentIncomingMessageView.bind(with: uiModel)
         } else {
             let configuration: ConversationBubbleView.Configuration
-            
+
             switch uiModel.state {
             case .incoming:
                 configuration = .init(
                     backgroundColor: DesignSystem.Colors.backgroundDefault,
-                    textColor: .black
+                    textColor: .black,
                 )
             case .outgoing:
                 configuration = .init(
@@ -205,6 +227,12 @@ extension MainChatViewController {
             }
 
             let messageView = ConversationBubbleView(config: configuration)
+
+            messageView.copyButtonTappedPublisher
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] textToCopy in
+                    self?.viewModel.input.copyToClipboard(textToCopy)
+                }.store(in: &disposeBag)
 
             if uiModel.state == .incoming {
                 currentIncomingMessageView = messageView

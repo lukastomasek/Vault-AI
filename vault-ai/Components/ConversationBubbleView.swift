@@ -5,6 +5,7 @@
 //  Created by Lukas Tomasek on 2025-11-23.
 //
 
+import Combine
 import Foundation
 import SnapKit
 import UIKit
@@ -45,10 +46,17 @@ final class ConversationBubbleView: View {
 
     private let config: Configuration
 
+    private let copyByttonTappedSubject = PassthroughSubject<String, Never>()
+    public var copyButtonTappedPublisher: AnyPublisher<String, Never> { copyByttonTappedSubject.eraseToAnyPublisher()
+    }
+
     // MARK: - UI Elements
 
     private let textLabel = UILabel()
+    private let copyButton = UIButton()
+
     private let containerView = UIView()
+    private let buttonStackView = UIStackView()
 
     // MARK: Init
 
@@ -66,7 +74,13 @@ final class ConversationBubbleView: View {
         textLabel.lineBreakMode = .byWordWrapping
         textLabel.numberOfLines = 0
 
+        buttonStackView.spacing = DesignSystem.Spacing.m
+        buttonStackView.axis = .horizontal
+        buttonStackView.distribution = .fill
+        buttonStackView.alignment = .center
+
         addSubview(containerView)
+        addSubview(buttonStackView)
         containerView.addSubview(textLabel)
     }
 
@@ -79,14 +93,20 @@ final class ConversationBubbleView: View {
     override func setupConstraints() {
         super.setupConstraints()
 
+        snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(44.0)
+        }
+
         textLabel.snp.makeConstraints { make in
             make.edges.equalToSuperview().inset(DesignSystem.Spacing.m)
         }
 
         containerView.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview()
+            make.top.equalToSuperview()
             make.width.lessThanOrEqualToSuperview().multipliedBy(0.75)
         }
+
+        setupButtons()
     }
 
     func bind(with uiModel: UIModel) {
@@ -94,9 +114,11 @@ final class ConversationBubbleView: View {
         textLabel.textColor = config.textColor
         containerView.backgroundColor = config.backgroundColor
 
+        let showCopyButton = uiModel.copyActionEnabled
+        copyButton.isHidden = !showCopyButton
 
         containerView.snp.remakeConstraints { make in
-            make.top.bottom.equalToSuperview()
+            make.top.equalToSuperview()
             make.width.lessThanOrEqualToSuperview().multipliedBy(0.75)
 
             switch uiModel.state {
@@ -109,7 +131,37 @@ final class ConversationBubbleView: View {
             }
         }
 
+        buttonStackView.snp.remakeConstraints { make in
+            make.top.equalTo(containerView.snp.bottom).offset(DesignSystem.Spacing.xs)
+            make.bottom.equalToSuperview()
+            make.leading.equalToSuperview()
+            make.trailing.lessThanOrEqualToSuperview()
+            make.height.equalTo(22.0)
+        }
+
         setNeedsLayout()
         layoutIfNeeded()
+    }
+}
+
+extension ConversationBubbleView {
+    private func setupButtons() {
+        let copyIcon = UIImage(systemName: "doc.on.doc")
+        copyButton.setImage(copyIcon, for: .normal)
+        copyButton.tintColor = .lightGray
+        copyButton.addTarget(self, action: #selector(copyButtonTapped), for: .touchUpInside)
+        copyButton.setContentHuggingPriority(.required, for: .horizontal)
+        copyButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        buttonStackView.addArrangedSubview(copyButton)
+
+        copyButton.snp.makeConstraints { make in
+            make.width.height.equalTo(22.0)
+        }
+    }
+
+    @objc private func copyButtonTapped() {
+        Haptics.impact(.light)
+        copyByttonTappedSubject.send(textLabel.text ?? "")
     }
 }
